@@ -12,6 +12,11 @@ enum ListenOptions : int {
     ONLY_IPV4 = 2
 };
 
+struct SockAddrInfo {
+    in_addr_t   addr;
+    uint16_t    port;
+};
+
 class WIN32_EXPORT Node {
 protected:
     template <void C(Socket *p, bool error)>
@@ -74,6 +79,7 @@ protected:
     Loop *loop;
     NodeData *nodeData;
     std::recursive_mutex asyncMutex;
+    SockAddrInfo sockAddrInfo_;
 
 public:
     Node(int recvLength = 1024, int prePadding = 0, int postPadding = 0, bool useDefaultLoop = false);
@@ -88,6 +94,8 @@ public:
     Loop *getLoop() {
         return loop;
     }
+
+    SockAddrInfo getSockAddrInfo() const { return sockAddrInfo_; }
 
     template <uS::Socket *I(Socket *s), void C(Socket *p, bool error)>
     Socket *connect(const char *hostname, int port, bool secure, NodeData *nodeData) {
@@ -107,6 +115,10 @@ public:
             return nullptr;
         }
 
+        // Store socket address and port
+        sockAddrInfo_.addr = ((sockaddr_in *)result->ai_addr)->sin_addr.s_addr;
+        sockAddrInfo_.port = port;
+
         ::connect(fd, result->ai_addr, result->ai_addrlen);
         freeaddrinfo(result);
 
@@ -122,6 +134,7 @@ public:
 
         socket->setCb(connect_cb<C>);
         socket->start(loop, socket, socket->setPoll(UV_WRITABLE));
+
         return socket;
     }
 

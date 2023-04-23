@@ -205,39 +205,42 @@ void Hub::connect(std::string uri, void *user, std::map<std::string, std::string
 
     if (!parseURI(uri, secure, hostname, port, path)) {
         eh->errorHandler(user);
-    } else {
-        HttpSocket<CLIENT> *httpSocket = (HttpSocket<CLIENT> *) uS::Node::connect<allocateHttpSocket, onClientConnection>(hostname.c_str(), port, secure, eh);
-        if (httpSocket) {
-            // startTimeout occupies the user
-            httpSocket->startTimeout<HttpSocket<CLIENT>::onEnd>(timeoutMs);
-            httpSocket->httpUser = user;
+        return;
+    }
 
-            std::string randomKey = "x3JJHMbDL1EzLkh9GBhXDw==";
+    HttpSocket<CLIENT> *httpSocket = (HttpSocket<CLIENT> *)
+        uS::Node::connect<allocateHttpSocket, onClientConnection>(hostname.c_str(), port, secure, eh);
+    if (!httpSocket) {
+        eh->errorHandler(user);
+        return;
+    }
+
+    // startTimeout occupies the user
+    httpSocket->startTimeout<HttpSocket<CLIENT>::onEnd>(timeoutMs);
+    httpSocket->httpUser = user;
+
+    std::string randomKey = "x3JJHMbDL1EzLkh9GBhXDw==";
 //            for (int i = 0; i < 22; i++) {
 //                randomKey[i] = rand() %
 //            }
 
-            httpSocket->httpBuffer = "GET /" + path + " HTTP/1.1\r\n"
-                                     "Upgrade: websocket\r\n"
-                                     "Connection: Upgrade\r\n"
-                                     "Sec-WebSocket-Key: " + randomKey + "\r\n"
-                                     "Host: " + hostname + ":" + std::to_string(port) + "\r\n"
-                                     "Sec-WebSocket-Version: 13\r\n";
+    httpSocket->httpBuffer = "GET /" + path + " HTTP/1.1\r\n"
+                                "Upgrade: websocket\r\n"
+                                "Connection: Upgrade\r\n"
+                                "Sec-WebSocket-Key: " + randomKey + "\r\n"
+                                "Host: " + hostname + ":" + std::to_string(port) + "\r\n"
+                                "Sec-WebSocket-Version: 13\r\n";
 
-            if (eh->extensionOptions & PERMESSAGE_DEFLATE) {
-                // clients don't support sliding window for now, so always negotiate server_no_context_takeover
-                httpSocket->httpBuffer += "Sec-WebSocket-Extensions: permessage-deflate; server_no_context_takeover\r\n";
-            }
-
-            for (std::pair<std::string, std::string> header : extraHeaders) {
-                httpSocket->httpBuffer += header.first + ": " + header.second + "\r\n";
-            }
-
-            httpSocket->httpBuffer += "\r\n";
-        } else {
-            eh->errorHandler(user);
-        }
+    if (eh->extensionOptions & PERMESSAGE_DEFLATE) {
+        // clients don't support sliding window for now, so always negotiate server_no_context_takeover
+        httpSocket->httpBuffer += "Sec-WebSocket-Extensions: permessage-deflate; server_no_context_takeover\r\n";
     }
+
+    for (std::pair<std::string, std::string> header : extraHeaders) {
+        httpSocket->httpBuffer += header.first + ": " + header.second + "\r\n";
+    }
+
+    httpSocket->httpBuffer += "\r\n";
 }
 
 void Hub::upgrade(uv_os_sock_t fd, const char *secKey, SSL *ssl, const char *extensions, size_t extensionsLength, const char *subprotocol, size_t subprotocolLength, Group<SERVER> *serverGroup) {
