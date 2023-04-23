@@ -1,6 +1,6 @@
 W        = -Wall
-OPT      = -O2 -g
-STD      = -std=c++11
+OPT      = -O2
+STD      = -std=c++17
 CXXFLAGS = $(STD) $(OPT) $(W) -fPIC $(XCXXFLAGS)
 INCS     = -Isrc/
 
