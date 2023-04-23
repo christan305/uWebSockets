@@ -73,6 +73,7 @@ public:
     // Thread safe
     void terminate();
     void ping(const char *message) {send(message, OpCode::PING);}
+    void pong(const char* message) { send(message, OpCode::PONG);}
     void send(const char *message, OpCode opCode = OpCode::TEXT) {send(message, strlen(message), opCode);}
     void send(const char *message, size_t length, OpCode opCode, void(*callback)(WebSocket<isServer> *webSocket, void *data, bool cancelled, void *reserved) = nullptr, void *callbackData = nullptr, bool compress = false, size_t *compressedSize = nullptr);
     static PreparedMessage *prepareMessage(char *data, size_t length, OpCode opCode, bool compressed, void(*callback)(WebSocket<isServer> *webSocket, void *data, bool cancelled, void *reserved) = nullptr);
