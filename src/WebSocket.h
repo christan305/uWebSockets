@@ -24,6 +24,8 @@ protected:
     unsigned char controlTipLength = 0, hasOutstandingPong = false;
 
     void *slidingDeflateWindow = nullptr;
+    
+    std::chrono::high_resolution_clock::time_point pingTime;
 
     WebSocket(bool perMessageDeflate, bool serverNoContextTakeover, uS::Socket *socket);
 
@@ -76,6 +78,9 @@ public:
     static PreparedMessage *prepareMessage(char *data, size_t length, OpCode opCode, bool compressed, void(*callback)(WebSocket<isServer> *webSocket, void *data, bool cancelled, void *reserved) = nullptr);
     static PreparedMessage *prepareMessageBatch(std::vector<std::string> &messages, std::vector<int> &excludedMessages,
                                                 OpCode opCode, bool compressed, void(*callback)(WebSocket<isServer> *webSocket, void *data, bool cancelled, void *reserved) = nullptr);
+
+    std::chrono::high_resolution_clock::time_point getPingTime() const { return pingTime; }
+    void setPingTime() { pingTime = std::chrono::high_resolution_clock::now(); }
 
     void getCompressionState(bool &enabledOut, bool &slidingWindowOut) {
         enabledOut = compressionStatus != CompressionStatus::DISABLED;
