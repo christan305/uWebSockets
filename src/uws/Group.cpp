@@ -238,7 +238,9 @@ void Group<isServer>::broadcast(const char *message, size_t length, OpCode opCod
 #endif
 
     typename WebSocket<isServer>::PreparedMessage *preparedMessage = WebSocket<isServer>::prepareMessage((char *) message, length, opCode, false);
-    forEach([preparedMessage](uWS::WebSocket<isServer> *ws) {
+    forEach([opCode, preparedMessage](uWS::WebSocket<isServer> *ws) {
+        if (opCode == OpCode::PING)
+            ws->setPingTime();
         ws->sendPrepared(preparedMessage);
     });
     WebSocket<isServer>::finalizeMessage(preparedMessage);
